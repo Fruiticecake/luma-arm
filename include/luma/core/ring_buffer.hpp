@@ -9,7 +9,7 @@
 namespace luma::core {
 
 // ============================================================================
-// ★ Stage 1A 动手任务：泛型覆盖型历史环形缓冲（飞控黑匣子 & 滑动窗底座）
+// 泛型覆盖型历史环形缓冲（飞控黑匣子 & 滑动窗底座）
 //
 // 契约与不变量（Executable Spec -> tests/core/test_ring_buffer.cpp）：
 //   1. 零堆分配写入：内部使用定长 std::array<T, Capacity>，pushOverwrite() 必须 O(1) 且不分配堆内存。
@@ -24,32 +24,38 @@ class HistoryRingBuffer {
 
 public:
     void pushOverwrite(const T& item) noexcept {
-        // TODO(Stage 1A):
-        // 1. 加锁 mutex_
-        // 2. 将 item 写入 buf_[head_]
-        // 3. 更新 head_ = (head_ + 1) % Capacity
-        // 4. 若 count_ < Capacity 则 ++count_
-        (void)item;
+        std::lock_guard<std::mutex> lock(mutex_);
+        buf_[head_] = item;
+        head_ = (head_ + 1) % Capacity;
+        if (count_ < Capacity) {
+            ++count_;
+        }
     }
 
     void snapshot(std::vector<T>& out) const {
-        // TODO(Stage 1A):
-        // 1. 加锁 mutex_
-        // 2. out.clear(); out.reserve(count_);
-        // 3. 计算最老元素起始索引：start = (count_ == Capacity) ? head_ : 0
-        // 4. 依次拷贝 count_ 条元素到 out（按从旧到新顺序）
+        // 锁外预留：Capacity 编译期已知，先把可能触发 malloc 的扩容放到锁外，
+        // 保证持锁临界区内只做纯内存拷贝（零堆分配），绝不拖慢 50Hz 实时写入线程
         out.clear();
+        out.reserve(Capacity);
+
+        std::lock_guard<std::mutex> lock(mutex_);
+        const std::size_t start = (count_ == Capacity) ? head_ : 0;
+        for (std::size_t i = 0; i < count_; ++i) {
+            out.push_back(buf_[(start + i) % Capacity]);
+        }
     }
 
     std::size_t size() const noexcept {
-        // TODO(Stage 1A): 加锁返回 count_
-        return 0;
+        std::lock_guard<std::mutex> lock(mutex_);
+        return count_;
     }
 
     constexpr std::size_t capacity() const noexcept { return Capacity; }
 
     void clear() noexcept {
-        // TODO(Stage 1A): 加锁将 head_ 与 count_ 归零
+        std::lock_guard<std::mutex> lock(mutex_);
+        head_ = 0;
+        count_ = 0;
     }
 
 private:

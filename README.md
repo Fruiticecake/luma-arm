@@ -42,9 +42,11 @@ ctest --test-dir build-tsan --output-on-failure
 
 ## 模块进度（滚动演进）
 
+> 持续维护的实时 C++ 编码规范见 [docs/coding-standards.md](./docs/coding-standards.md)。
+
 | 模块 | 职责 | 当前状态 |
 |---|---|---|
-| `core` | 冻结 POD DTO、覆盖型历史环形缓冲、防重入 `InProcEventBus`、异步日志、UDS 总线、SHM Seqlock 帧池 | 🚧 进行中（Stage 1：`types` / `HistoryRingBuffer` / `InProcEventBus`） |
+| `core` | 冻结 POD DTO、覆盖型历史环形缓冲、防重入 `InProcEventBus`、异步日志、UDS 总线、SHM Seqlock 帧池 | 🚧 进行中（✅ `types` / `HistoryRingBuffer` 已过 ASan+TSan；🚧 `InProcEventBus` 待完成） |
 | `safety` | 底座偏航围栏、桌面高度底线、头部防撞球、500ms 心跳熔断 | ⏳ 待开工 |
 | `hal` / `execution` | 串口/TCP/Mock 传输层、NexArm V1.0.2 流式帧协议与 50Hz 伺服 | ⏳ 待开工 |
 | `algo` / `perception` | 防抖滤波、手眼变换、RK3588 RKNPU 目标检测管线 | ⏳ 待开工 |
