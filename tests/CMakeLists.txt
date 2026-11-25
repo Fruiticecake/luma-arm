@@ -1,0 +1,10 @@
+function(luma_add_test target source)
+    add_executable(${target} ${source})
+    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
+    target_link_libraries(${target} PRIVATE luma::core luma_compile_options)
+    add_test(NAME ${target} COMMAND ${target})
+endfunction()
+
+luma_add_test(test_types core/test_types.cpp)
+luma_add_test(test_ring_buffer core/test_ring_buffer.cpp)
+luma_add_test(test_inproc_event_bus core/test_inproc_event_bus.cpp)

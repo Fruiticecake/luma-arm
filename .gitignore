@@ -1,0 +1,23 @@
+# Build outputs
+build/
+build-*/
+cmake-build-*/
+out/
+*.o
+*.a
+*.so
+*.exe
+compile_commands.json
+
+# IDE & OS
+.vscode/
+.idea/
+.cache/
+.DS_Store
+Thumbs.db
+
+# Runtime logs & blackbox dumps
+*.log
+*.log.*
+*.csv
+*.sock
