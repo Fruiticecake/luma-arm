@@ -1,0 +1,14 @@
+# clangd 从 CMake Ninja 生成的编译数据库解析工程头文件和标准库，
+# 这样 Ctrl+Click / F12 才能跳到结构体成员定义。
+CompileFlags:
+  CompilationDatabase: build
+  # clang-cl 会把 -Wall 当成 -Weverything，编辑器里会刷满无关告警。
+  Remove:
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+    - -Wshadow
+    - -Wconversion
+
+Index:
+  Background: Build

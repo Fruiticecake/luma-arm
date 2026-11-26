@@ -13,6 +13,7 @@
 | `CS-003` | 资源与生命周期 | **跨对象引用防悬垂：`Subscription` 等句柄强制 Move-Only RAII + `weak_ptr`** | `InProcEventBus` 生命周期倒置防 UAF |
 | `CS-004` | 时间与可靠性 | **所有超时、心跳与 TTL 判定强制使用单调时钟 `steady_clock`，禁用挂钟** | `types.hpp` (`steadyNowMs`) 防 NTP 跳变 |
 | `CS-005` | 契约与编译门禁 | **跨进程 DTO 强制 `static_assert(trivially_copyable)`；全量开启 ASan/TSan 零警告** | `types.hpp` 与 CI 三矩阵构建 |
+| `CS-006` | 移动语义与热路径 | **严禁对仍需保留的共享容器误用 `std::move`；热路径读多写少去拷贝改用 COW 快照** | `InProcEventBus::publish()` 实踩排障 |
 
 ---
 
@@ -74,3 +75,13 @@
   1. 跨进程共享的 POD DTO 必须附带 `static_assert(std::is_trivially_copyable_v<T>)` 及关键尺寸上限断言，把协议破坏拦截在编译期；
   2. 所有代码默认开启 `-Wall -Wextra -Wpedantic -Wshadow -Wconversion` 零警告；
   3. 每次合并前必须同时通过 **ASan + UBSan** 与 **TSan** 并发检测（见 [.github/workflows/ci.yml](../.github/workflows/ci.yml)）。
+
+---
+
+### `CS-006`｜严禁对仍需保留的共享容器误用 `std::move`；热路径去拷贝应改用 COW 不可变快照
+
+- **背景与实踩坑点**：`std::move` 不是“更快的拷贝”，而是将源容器底层内存所有权直接搬空（moved-from 状态）。在 `InProcEventBus::publish()` 中若误写 `snapshot = std::move(it->second);`，第一次发布虽能送达，但会瞬间把总线路由表掏空成 `0`，导致后续所有发布丢失。
+- **正确演进路径**：
+  1. **常规版**：锁内拷贝 `snapshot = it->second;`（保证路由表完整）；
+  2. **高并发零分配进阶版（COW）**：若读（`publish`）远多于写（`subscribe/unsubscribe`）且需消除锁内 `vector` 堆分配，应将表项升级为 `std::shared_ptr<const std::vector<...>>`——冷路径写时复制替换指针（旧表在锁外析构释放），热路径锁内仅做 O(1) `shared_ptr` 拷贝。
+- **权衡代价**：COW 会略微增加冷路径 `subscribe/unsubscribe` 的一次数组拷贝成本，换取高频热路径 0 `malloc`、锁持有时间降至纳秒级。
