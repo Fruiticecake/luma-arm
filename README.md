@@ -47,8 +47,8 @@ ctest --test-dir build-tsan --output-on-failure
 | 模块 | 职责 | 当前状态 |
 |---|---|---|
 | `core` | 冻结 POD DTO、覆盖型历史环形缓冲、防重入 `InProcEventBus`、异步日志、UDS 总线、SHM Seqlock 帧池 | 🚧 进行中（✅ Stage 1 全绿：`types` / `HistoryRingBuffer` / `InProcEventBus` 已过 ASan+TSan；🚧 Stage 2 待启动） |
-| `safety` | 底座偏航围栏、桌面高度底线、头部防撞球、500ms 心跳熔断 | ⏳ 待开工 |
-| `hal` / `execution` | 串口/TCP/Mock 传输层、NexArm V1.0.2 流式帧协议与 50Hz 伺服 | ⏳ 待开工 |
+| `safety` | 底座偏航围栏、桌面高度底线、防 NaN、限速保护 | ✅ 已完成并过 ASan+TSan（`SafetyGuard` 4/4） |
+| `hal` / `execution` | USB 1Mbps 串口 / TCP / Mock 传输层、NexArm V1.0.2 状态机协议与驱动、`luma_probe` | ✅ 单测全绿 + 已在 RK3588 aarch64 (`/dev/ttyUSB0 1Mbps`) 完成实机只读握手 |
 | `algo` / `perception` | 防抖滤波、手眼变换、RK3588 RKNPU 目标检测管线 | ⏳ 待开工 |
 | `skills` / `cognition` / `app` | 伴读/坐姿状态机、VLM 护栏封装、双模式装配入口 | ⏳ 待开工 |
 

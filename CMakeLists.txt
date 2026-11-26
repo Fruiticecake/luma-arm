@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(LUMA_BUILD_TESTS "Build unit tests" ON)
+option(LUMA_BUILD_TOOLS "Build hardware probe tools" ON)
 option(LUMA_ENABLE_ASAN "Enable AddressSanitizer + UndefinedBehaviorSanitizer" OFF)
 option(LUMA_ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 
@@ -33,7 +34,19 @@ elseif(LUMA_ENABLE_TSAN)
     target_link_options(luma_compile_options INTERFACE -fsanitize=thread)
 endif()
 
+# 严格无环 DAG：core -> safety / hal -> execution
 add_subdirectory(src/core)
+add_subdirectory(src/safety)
+add_subdirectory(src/hal)
+add_subdirectory(src/execution)
+
+if(LUMA_BUILD_TOOLS)
+    add_executable(luma_probe tools/luma_probe.cpp)
+    target_link_libraries(luma_probe PRIVATE luma::execution luma_compile_options)
+
+    add_executable(luma_move_demo tools/luma_move_demo.cpp)
+    target_link_libraries(luma_move_demo PRIVATE luma::execution luma_compile_options)
+endif()
 
 if(LUMA_BUILD_TESTS)
     enable_testing()
